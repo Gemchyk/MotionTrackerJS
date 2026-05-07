@@ -139,7 +139,8 @@ class App extends Component<{}, AppState> {
 
           if (response.ok) {
             const data = await response.json();
-            if (data.success) {
+            // TODO: Check if the camera is STILL on after the async fetch resolves
+            if (data.success && this.state.isCameraOn) {
               this.drawBoundingBoxes(data.objects);
             }
           }
