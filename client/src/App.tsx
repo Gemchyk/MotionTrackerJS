@@ -10,6 +10,7 @@ interface AppState {
   isTracking: boolean;
   serverStatus: string;
   isCameraOn: boolean;
+  isModalOpen: boolean; // Added modal state
 }
 
 class App extends Component<{}, AppState> {
@@ -24,6 +25,7 @@ class App extends Component<{}, AppState> {
       isTracking: false,
       serverStatus: 'Checking server connection...',
       isCameraOn: false,
+      isModalOpen: false, // Initialize modal as closed
     };
 
     this.videoRef = React.createRef();
@@ -88,6 +90,11 @@ class App extends Component<{}, AppState> {
     }
   };
 
+  // Toggles the modal open and closed
+  toggleModal = () => {
+    this.setState((prevState) => ({ isModalOpen: !prevState.isModalOpen }));
+  };
+
   checkServer = async () => {
     try {
       const res = await fetch('http://localhost:5000/api/status');
@@ -139,7 +146,7 @@ class App extends Component<{}, AppState> {
 
           if (response.ok) {
             const data = await response.json();
-            // TODO: Check if the camera is STILL on after the async fetch resolves
+            // Include the previous fix: verify camera is still on before drawing
             if (data.success && this.state.isCameraOn) {
               this.drawBoundingBoxes(data.objects);
             }
@@ -181,12 +188,36 @@ class App extends Component<{}, AppState> {
   };
 
   render() {
-    const { isTracking, serverStatus, isCameraOn } = this.state;
+    const { isTracking, serverStatus, isCameraOn, isModalOpen } = this.state;
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', fontFamily: 'sans-serif', marginTop: '2rem' }}>
-        <h1>AI Object Tracker</h1>
-        <p>Status: <span style={{ color: isTracking ? 'green' : 'orange' }}><strong>{serverStatus}</strong></span></p>
+        
+        {/* Header container for Title and Info Button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <h1 style={{ margin: 0 }}>AI Object Tracker</h1>
+          <button 
+            onClick={this.toggleModal}
+            style={{
+              padding: '5px 14px',
+              fontSize: '18px',
+              cursor: 'pointer',
+              backgroundColor: '#007BFF',
+              color: 'white',
+              border: 'none',
+              borderRadius: '50px',
+              fontWeight: 'bold',
+              height: '40px',
+              width: '40px',
+              marginTop: '15px'
+            }}
+            title="App Instructions"
+          >
+            i
+          </button>
+        </div>
+
+        <p style={{margin: "30px"}}>Status: <span style={{ color: isTracking ? 'green' : 'orange'}}><strong>{serverStatus}</strong></span></p>
 
         <div style={{ position: 'relative', width: 640, height: 480, backgroundColor: '#111', borderRadius: '8px', overflow: 'hidden' }}>
           <video
@@ -221,6 +252,81 @@ class App extends Component<{}, AppState> {
         >
           {isCameraOn ? 'Turn Off Camera' : 'Turn On Camera'}
         </button>
+
+        {/* Modal Overlay */}
+        {isModalOpen && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            zIndex: 9999,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center'
+          }}>
+            {/* Modal Content */}
+            <div style={{
+              backgroundColor: '#222', 
+              color: '#eaeaea',        
+              padding: '2rem',
+              borderRadius: '8px',
+              maxWidth: '500px',
+              width: '90%',
+              position: 'relative',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.4)' 
+            }}>
+              <button
+                onClick={this.toggleModal}
+                style={{
+                  position: 'absolute',
+                  top: '15px',
+                  right: '20px',
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '24px',
+                  cursor: 'pointer',
+                  color: '#666'
+                }}
+              >
+                &times;
+              </button>
+              
+              <h2 style={{ marginTop: 0, color: '#ffffff' }}>About AI Object Tracker</h2>
+              <p style={{ lineHeight: '1.5' }}>
+                This application streams your webcam feed to a local backend server where a 
+                <strong> COCO-SSD machine learning model</strong> analyzes the frames to detect common objects in real-time.
+              </p>
+              
+              <h3 style={{ marginTop: '1.5rem', color: '#ffffff' }}>How to use:</h3>
+              <ol style={{ lineHeight: '1.6', paddingLeft: '20px' }}>
+                <li>Ensure your backend Express server (Port 5000) is running.</li>
+                <li>Wait for the server status to read <strong>"Online & Tracking"</strong>.</li>
+                <li>Click <strong>Turn On Camera</strong> and allow browser permissions.</li>
+                <li>Point your camera at everyday objects (e.g., cell phone, cup, person) to see the AI detect them.</li>
+              </ol>
+
+              <div style={{ marginTop: '2rem', textAlign: 'right' }}>
+                <button 
+                  onClick={this.toggleModal}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#007BFF',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Got it!
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
