@@ -1,4 +1,4 @@
-import React, { Component, RefObject } from 'react';
+import React, { Component, type RefObject } from 'react'; // Fix 1: Added 'type' keyword
 
 interface DetectedObject {
   bbox: [number, number, number, number];
@@ -10,13 +10,16 @@ interface AppState {
   isTracking: boolean;
   serverStatus: string;
   isCameraOn: boolean;
-  isModalOpen: boolean; // Added modal state
+  isModalOpen: boolean;
 }
 
 class App extends Component<{}, AppState> {
-  videoRef: RefObject<HTMLVideoElement>;
-  canvasRef: RefObject<HTMLCanvasElement>;
-  pollInterval: NodeJS.Timeout | null = null;
+  // Fix 3: Initialized refs directly as class properties with explicit generics
+  videoRef: RefObject<HTMLVideoElement> = React.createRef<HTMLVideoElement>();
+  canvasRef: RefObject<HTMLCanvasElement> = React.createRef<HTMLCanvasElement>();
+  
+  // Fix 2: Changed NodeJS.Timeout to number for browser environment
+  pollInterval: number | null = null;
   isRunning: boolean = false;
 
   constructor(props: {}) {
@@ -25,11 +28,8 @@ class App extends Component<{}, AppState> {
       isTracking: false,
       serverStatus: 'Checking server connection...',
       isCameraOn: false,
-      isModalOpen: false, // Initialize modal as closed
+      isModalOpen: false,
     };
-
-    this.videoRef = React.createRef();
-    this.canvasRef = React.createRef();
   }
 
   componentDidMount() {
@@ -37,7 +37,8 @@ class App extends Component<{}, AppState> {
     this.startPolling();
   }
 
-  componentDidUpdate(prevProps: {}, prevState: AppState) {
+  // Fix 4: fixed prevProps with an underscore to denote it is unused
+  componentDidUpdate(_prevProps: {}, prevState: AppState) {
     if (!prevState.isTracking && this.state.isTracking) {
       if (this.pollInterval) {
         clearInterval(this.pollInterval);
@@ -90,7 +91,6 @@ class App extends Component<{}, AppState> {
     }
   };
 
-  // Toggles the modal open and closed
   toggleModal = () => {
     this.setState((prevState) => ({ isModalOpen: !prevState.isModalOpen }));
   };
@@ -115,7 +115,7 @@ class App extends Component<{}, AppState> {
 
   startPolling = () => {
     if (!this.state.isTracking) {
-      this.pollInterval = setInterval(this.checkServer, 2000);
+      this.pollInterval = window.setInterval(this.checkServer, 2000);
     }
   };
 
@@ -146,7 +146,6 @@ class App extends Component<{}, AppState> {
 
           if (response.ok) {
             const data = await response.json();
-            // Include the previous fix: verify camera is still on before drawing
             if (data.success && this.state.isCameraOn) {
               this.drawBoundingBoxes(data.objects);
             }
@@ -193,7 +192,6 @@ class App extends Component<{}, AppState> {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', fontFamily: 'sans-serif', marginTop: '2rem' }}>
         
-        {/* Header container for Title and Info Button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
           <h1 style={{ margin: 0 }}>AI Object Tracker</h1>
           <button 
@@ -253,7 +251,6 @@ class App extends Component<{}, AppState> {
           {isCameraOn ? 'Turn Off Camera' : 'Turn On Camera'}
         </button>
 
-        {/* Modal Overlay */}
         {isModalOpen && (
           <div style={{
             position: 'fixed',
@@ -267,7 +264,6 @@ class App extends Component<{}, AppState> {
             justifyContent: 'center',
             alignItems: 'center'
           }}>
-            {/* Modal Content */}
             <div style={{
               backgroundColor: '#222', 
               color: '#eaeaea',        
