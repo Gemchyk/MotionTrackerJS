@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Environment files — VITE_* values are baked into the bundle at build time,
+# so keep real values out of the repo and commit only .env.example
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
